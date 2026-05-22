@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Calculadora de Financiamiento</title>
@@ -1018,6 +1019,12 @@
       <p>Ingresa un pago o monto para ver las opciones disponibles</p>
     </div>
   </div>
+
+  <div style="text-align: right; margin-top: 20px;">
+  <button id="downloadPdfBtn" onclick="descargarTablaPDF()" class="search-btn" style="background: linear-gradient(135deg, #1075b9, #053396);">
+    📄 DESCARGAR TABLA EN PDF
+  </button>
+</div>
 
 </div>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Inter:wght@400;500;700&family=Poppins:wght@400;500;700&family=Roboto:wght@400;500;700&family=Montserrat:wght@400;500;700&family=Open+Sans:wght@400;500;700&family=Comic+Neue:wght@400;700&family=Fredoka+One&family=Quicksand:wght@400;500;700&family=Pacifico&family=Righteous&family=Bangers&family=Lobster&family=Press+Start+2P&display=swap" rel="stylesheet">
@@ -12238,6 +12245,9 @@ tabla.forEach(row => {
   
   html += `</tbody></table></div>`;
   document.getElementById('resultsCard').innerHTML = html;
+
+
+  
 }
 
 function cambiarMes(mes) {
@@ -12264,162 +12274,6 @@ document.getElementById('searchInput')?.addEventListener('keydown', e => {
   }
 });
 
-function descargarTablaPDF() {
-    if (!currentSearchValue || !currentPlan || !RAW[currentPlan]) {
-        alert('No hay datos para generar el PDF. Realiza una búsqueda primero.');
-        return;
-    }
-    
-    const plan = RAW[currentPlan];
-    const meta = PLAN_META[currentPlan] || { label: currentPlan, desc: '', cat: '' };
-    const todos = obtenerTodosResultados(currentPlan, currentSearchValue);
-    
-    if (!todos[currentMonth]) {
-        alert('No hay datos disponibles para generar el PDF.');
-        return;
-    }
-    
-    const seleccionado = todos[currentMonth];
-    const tipoSeguro = calcularTipoSeguro();
-    const pagoMensual = seleccionado.pago;
-    const { tabla, totalSeguro } = calcularAmortizacion(seleccionado.monto, currentMonth, pagoMensual, tipoSeguro);
-    
-    const interesesTotales = (pagoMensual * currentMonth) - seleccionado.monto;
-    const montoADispersar = seleccionado.monto - totalSeguro;
-    
-    // Crear contenido HTML para el PDF
-    let contenido = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <title>Tabla de Amortización - ${meta.label}</title>
-            <style>
-                body {
-                    font-family: Arial, sans-serif;
-                    margin: 20px;
-                    font-size: 12px;
-                }
-                h1 {
-                    text-align: center;
-                    font-size: 18px;
-                    margin-bottom: 5px;
-                }
-                .subtitle {
-                    text-align: center;
-                    font-size: 14px;
-                    color: #666;
-                    margin-bottom: 20px;
-                }
-                .info-section {
-                    margin-bottom: 20px;
-                    padding: 10px;
-                    background: #f5f5f5;
-                    border-radius: 5px;
-                }
-                .info-grid {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                    gap: 10px;
-                    margin-bottom: 10px;
-                }
-                .info-item {
-                    font-size: 12px;
-                }
-                .info-label {
-                    font-weight: bold;
-                }
-                table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    margin-top: 15px;
-                }
-                th, td {
-                    border: 1px solid #ddd;
-                    padding: 8px;
-                    text-align: right;
-                }
-                th {
-                    background-color: #f2f2f2;
-                    text-align: center;
-                    font-weight: bold;
-                }
-                td:first-child, th:first-child {
-                    text-align: center;
-                }
-                .footer {
-                    margin-top: 30px;
-                    text-align: center;
-                    font-size: 10px;
-                    color: #999;
-                }
-            </style>
-        </head>
-        <body>
-          
-            <h1>📊 TABLA DE AMORTIZACIÓN</h1>
-            <div class="subtitle"></div>
-            
-            <div class="info-section">
-                <div class="info-grid">
-                    <div class="info-item"><span class="info-label">💰 Monto financiado:</span> ${fmt(seleccionado.monto)}</div>
-                    <div class="info-item"><span class="info-label">📅 Plazo:</span> ${currentMonth} meses</div>
-                    <div class="info-item"><span class="info-label">💵 Pago mensual:</span> ${fmt(pagoMensual)}</div>
-                </div>
-                <div class="info-grid">
-                    <div class="info-item"><span class="info-label">🛡️ Seguro aplicado:</span> ${tipoSeguro === 'SEGURO 1' ? 'Seguro 1 (12 meses)' : tipoSeguro === 'SEGURO 2' ? 'Seguro 2 (todo el plazo)' : 'Sin seguro'}</div>
-                    <div class="info-item"><span class="info-label">💰 Total seguro cobrado:</span> ${fmt(totalSeguro)}</div>
-                    <div class="info-item"><span class="info-label">💰 Monto a dispersar:</span> ${fmt(montoADispersar)}</div>
-                </div>
-                <div class="info-grid">
-                    <div class="info-item"><span class="info-label">📈 Intereses totales:</span> ${fmt(interesesTotales)}</div>
-                    <div class="info-item"><span class="info-label">💵 TOTAL DEL CRÉDITO:</span> ${fmt(pagoMensual * currentMonth)}</div>
-                    <div class="info-item"><span class="info-label">📊 Porcentaje de interés:</span> ${((interesesTotales / seleccionado.monto) * 100).toFixed(1)}%</div>
-                </div>
-            </div>
-            
-            <table>
-                <thead>
-                    <tr><th>Mes</th><th>Saldo Inicial</th><th>Interés</th><th>IVA (16%)</th><th>Pago a Capital</th><th>Pago Mensual</th><th>Cobro Seguro</th></tr>
-                </thead>
-                <tbody>`;
-    
-    tabla.forEach(row => {
-        contenido += `<tr>
-            <td>${row.mes}</td>
-            <td>${fmt(row.saldoInicial)}</td>
-            <td>${fmt(row.interes)}</td>
-            <td>${fmt(row.ivaInteres)}</td>
-            <td>${fmt(row.pagoCapital)}</td>
-            <td>${fmt(row.pagoMensual)}</td>
-            <td>${row.cobroSeguro > 0 ? fmt(row.cobroSeguro) : '—'}</td>
-        </tr>`;
-    });
-    
-    contenido += `
-                </tbody>
-            </table>
-            <div class="footer">
-                
-                Fecha de generación: ${new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })}
-            </div>
-        </body>
-        </html>
-    `;
-    
-    // Crear blob y descargar
-    const blob = new Blob([contenido], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Tabla_Amortizacion_${meta.label.replace(/[^a-z0-9]/gi, '_')}_${currentMonth}meses.html`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-}
-
-
 // Inicialización
 initPlanTabs();
 calcularTipoSeguro();
@@ -12432,6 +12286,135 @@ updateThemeUI(savedTheme);
 if (Object.keys(RAW).length === 0) {
   console.warn('No se encontraron datos en RAW. Usando datos de demostración generados automáticamente.');
 }
+
+
+// ==================== DESCARGA PDF ====================
+function descargarTablaPDF() {
+  const resultsCard = document.getElementById('resultsCard');
+  if (!resultsCard || resultsCard.innerHTML.includes('results-empty')) {
+    alert('📄 No hay resultados para exportar. Realiza una búsqueda primero.');
+    return;
+  }
+
+  // --- Extraer datos del DOM ---
+  const planInfo = resultsCard.querySelector('.plan-info-bar')?.innerText?.trim() || '';
+
+  // Dispersión
+  let dispHTML = '';
+  const dispTitulos = resultsCard.querySelectorAll('.resumen-dispersion .titulo');
+  const dispMontos  = resultsCard.querySelectorAll('.resumen-dispersion .monto');
+  if (dispMontos.length) {
+    dispHTML = '<table style="width:100%;border-collapse:collapse;margin-bottom:16px;"><thead><tr>';
+    dispMontos.forEach((_, i) => {
+      const t = dispTitulos[i+1] ? dispTitulos[i+1].innerText : '';
+      dispHTML += `<th style="background:#1075b9;color:white;padding:8px;font-size:11px;">${t}</th>`;
+    });
+    dispHTML += '</tr></thead><tbody><tr>';
+    dispMontos.forEach(m => {
+      dispHTML += `<td style="padding:10px;font-size:16px;font-weight:bold;text-align:center;border:1px solid #ddd;">${m.innerText}</td>`;
+    });
+    dispHTML += '</tr></tbody></table>';
+  }
+
+  // Métricas
+  let metHTML = '<table style="width:100%;border-collapse:collapse;margin-bottom:16px;"><tbody>';
+  resultsCard.querySelectorAll('.result-metric').forEach((m, i) => {
+    const label = m.querySelector('.metric-label')?.innerText || '';
+    const value = m.querySelector('.metric-value')?.innerText || '';
+    const sub   = m.querySelector('.metric-sub')?.innerText || '';
+    const bg = i % 2 === 0 ? '#f0f7ff' : '#ffffff';
+    metHTML += `<tr style="background:${bg};">
+      <td style="padding:8px 12px;font-size:11px;color:#555;border:1px solid #ddd;">${label}</td>
+      <td style="padding:8px 12px;font-size:15px;font-weight:bold;color:#1075b9;border:1px solid #ddd;">${value}</td>
+      <td style="padding:8px 12px;font-size:10px;color:#888;border:1px solid #ddd;">${sub}</td>
+    </tr>`;
+  });
+  metHTML += '</tbody></table>';
+
+  // Detalle del crédito
+  let detHTML = '<table style="width:60%;border-collapse:collapse;margin-bottom:16px;">';
+  resultsCard.querySelectorAll('.costo-detalle .detalle-row').forEach((row, i) => {
+    const label = row.querySelector('.detalle-label')?.innerText || '';
+    const valor = row.querySelector('.detalle-valor')?.innerText || '';
+    const isLast = i === resultsCard.querySelectorAll('.costo-detalle .detalle-row').length - 1;
+    const style = isLast
+      ? 'background:#1075b9;color:white;font-weight:bold;'
+      : (i % 2 === 0 ? 'background:#f9f9f9;' : '');
+    detHTML += `<tr style="${style}">
+      <td style="padding:6px 10px;border:1px solid #ddd;">${label}</td>
+      <td style="padding:6px 10px;border:1px solid #ddd;font-weight:600;">${valor}</td>
+    </tr>`;
+  });
+  detHTML += '</table>';
+
+  // Tabla de amortización
+  let tablaHTML = '';
+  const filas = resultsCard.querySelectorAll('.tabla-dispersion tbody tr');
+  if (filas.length) {
+    const ths = Array.from(resultsCard.querySelectorAll('.tabla-dispersion thead th')).map(h => h.innerText.trim());
+    tablaHTML = `<table style="width:100%;border-collapse:collapse;font-size:10px;">
+      <thead><tr>${ths.map(h => `<th style="background:#1075b9;color:white;padding:6px 8px;text-align:left;">${h}</th>`).join('')}</tr></thead>
+      <tbody>`;
+    filas.forEach((fila, i) => {
+      const celdas = Array.from(fila.querySelectorAll('td')).map(td => td.innerText.trim().split('\n')[0]);
+      const bg = i % 2 === 0 ? '' : 'background:#f5f5f5;';
+      tablaHTML += `<tr style="${bg}">${celdas.map(c => `<td style="border:1px solid #ddd;padding:5px 7px;">${c}</td>`).join('')}</tr>`;
+    });
+    tablaHTML += '</tbody></table>';
+  }
+
+  // --- Abrir ventana de impresión ---
+  const win = window.open('', '_blank');
+  if (!win) {
+    alert('⚠️ El navegador bloqueó la ventana emergente. Permite popups para este sitio e intenta de nuevo.');
+    return;
+  }
+
+  win.document.write(`<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Reporte de Financiamiento</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; color: #111; background: white; padding: 24px; }
+    h1 { color: #1075b9; font-size: 20px; text-align: center; margin-bottom: 4px; }
+    h3 { color: #1075b9; font-size: 12px; text-transform: uppercase; margin: 16px 0 8px; letter-spacing: 1px; }
+    .fecha { text-align:center; color:#666; font-size:11px; margin-bottom:6px; }
+    .plan  { text-align:center; color:#333; font-size:12px; font-weight:600; margin-bottom:18px; padding-bottom:14px; border-bottom:2px solid #1075b9; }
+    @media print {
+      body { padding: 10px; }
+      @page { margin: 12mm; size: A4; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Reporte de Financiamiento</h1>
+  <p class="fecha">Generado el ${new Date().toLocaleDateString('es-MX', {year:'numeric',month:'long',day:'numeric'})}</p>
+  ${planInfo ? `<p class="plan">${planInfo}</p>` : '<div style="margin-bottom:18px;border-bottom:2px solid #1075b9;"></div>'}
+
+  <h3>💰 Resumen de Dispersión</h3>
+  ${dispHTML || '<p style="color:#999;font-size:12px;">Sin datos</p>'}
+
+  <h3>📈 Métricas del Crédito</h3>
+  ${metHTML}
+
+  <h3>📋 Detalle del Crédito</h3>
+  ${detHTML}
+
+  <h3>📊 Tabla de Amortización</h3>
+  ${tablaHTML || '<p style="color:#999;font-size:12px;">Sin datos de amortización</p>'}
+
+  <script>
+    window.onload = function() {
+      setTimeout(function() { window.print(); }, 300);
+    };
+  <\/script>
+</body>
+</html>`);
+  win.document.close();
+}
 </script>
+
 </body>
 </html>
